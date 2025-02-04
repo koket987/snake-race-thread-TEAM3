@@ -13,14 +13,16 @@ import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JOptionPane;
 
 import enums.GridSize;
 
 public class SnakeApp {
 
+    public static boolean gameOver = false;
     private static SnakeApp app;
     public static final int MAX_THREADS = 8;
-    Snake[] snakes = new Snake[MAX_THREADS];
+    static Snake[] snakes = new Snake[MAX_THREADS];
     private static final Cell[] spawn = {
             new Cell(1, (GridSize.GRID_HEIGHT / 2) / 2),
             new Cell(GridSize.GRID_WIDTH - 2, 3 * (GridSize.GRID_HEIGHT / 2) / 2),
@@ -135,9 +137,30 @@ public class SnakeApp {
         }
     }
 
+    public static void declareWinner() {
+        gameOver = true;
+        System.out.println("¡Solo queda una serpiente viva! El juego ha terminado.");
+        for (Snake snake : snakes) {
+            if (!snake.isDead()) {
+                snake.getThread().interrupt(); // Detener el hilo de la serpiente viva
+            }
+        }
+
+        // Mostrar mensaje en el GUI cuando se termine el juego
+        JOptionPane.showMessageDialog(app.frame, "¡El juego ha terminado! Solo queda una serpiente viva.",
+                "Fin del juego", JOptionPane.INFORMATION_MESSAGE);
+
+        board.repaint();
+        app.btnStart.setEnabled(false);
+        app.btnPause.setEnabled(false);
+        app.btnResume.setEnabled(false);
+    }
+
     // Pausa el juego: se setea el flag global y los hilos entran en espera
-    private void pauseGame() {
-        paused = true;
+    public static void pauseGame() {
+        synchronized (pauseLock) {
+            paused = true;
+        }
     }
 
     // Reanuda el juego: se notifica a todos los hilos que estaban en espera

@@ -8,6 +8,8 @@ import enums.GridSize;
 
 public class Snake extends Observable implements Runnable {
 
+    private boolean isDead = false;
+    private Thread thread;
     private int idt;
     private Cell head;
     private Cell newCell;
@@ -15,6 +17,7 @@ public class Snake extends Observable implements Runnable {
     private Cell start = null;
 
     private boolean snakeEnd = false;
+    private volatile boolean isMoving = true;
 
     private int direction = Direction.NO_DIRECTION;
     private final int INIT_SIZE = 3;
@@ -28,6 +31,10 @@ public class Snake extends Observable implements Runnable {
     // Campo para registrar la hora de muerte (en milisegundos)
     private long deathTime = 0;
     private boolean selected;
+    private static int aliveSnakes = 0; // Contador de serpientes vivas
+    private static final Object lock = new Object(); // Para sincronización
+
+    private LinkedList<Cell> body = new LinkedList<>();
 
     // Interfaz para notificar la muerte
     public interface DeathListener {
@@ -43,6 +50,9 @@ public class Snake extends Observable implements Runnable {
         this.idt = idt;
         this.direction = direction;
         generateSnake(head);
+        synchronized (lock) {
+            aliveSnakes++; // Incrementar el contador de serpientes vivas
+        }
     }
 
     public boolean isSnakeEnd() {
@@ -72,11 +82,12 @@ public class Snake extends Observable implements Runnable {
         growing = INIT_SIZE - 1;
     }
 
+
     @Override
     public void run() {
+        thread = Thread.currentThread();
         while (!snakeEnd) {
-            // Verificar el estado global de pausa (evitando espera activa)
-            synchronized(SnakeApp.pauseLock) {
+            synchronized (SnakeApp.pauseLock) {
                 while (SnakeApp.paused) {
                     try {
                         SnakeApp.pauseLock.wait();
@@ -88,32 +99,42 @@ public class Snake extends Observable implements Runnable {
             }
 
             snakeCalc();
-
-            // Notificar cambios a la GUI
             setChanged();
             notifyObservers();
 
             try {
-                if (hasTurbo) {
-                    Thread.sleep(500 / 3);
-                } else {
-                    Thread.sleep(500);
-                }
+                Thread.sleep(hasTurbo ? 500 / 3 : 500);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
         }
 
-        // Registrar el instante de muerte si no se ha registrado aún
+        // Cuando la serpiente muere
         if (deathTime == 0) {
             deathTime = System.currentTimeMillis();
+            isDead = true; // Marcar que la serpiente está muerta
             if (deathListener != null) {
                 deathListener.snakeDied(this);
             }
         }
 
-        // Se puede incluir una corrección de dirección si fuera necesaria
+        synchronized (lock) {
+            aliveSnakes--;
+            if (aliveSnakes == 1) {
+                SnakeApp.declareWinner(); // Llamar al método que termina el juego
+            }
+        }
+
         fixDirection(head);
+    }
+
+
+    public boolean isDead() {
+        return isDead;
+    }
+
+    public Thread getThread() {
+        return thread;
     }
 
     private void snakeCalc() {

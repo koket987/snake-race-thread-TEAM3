@@ -221,6 +221,7 @@ public class Board extends JLabel implements Observer {
 
 	}
 
+
 	@Override
 	public void update(Observable arg0, Object arg1) {
 		repaint();
