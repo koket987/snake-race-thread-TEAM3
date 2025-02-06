@@ -1,0 +1,16 @@
+2. De acuerdo con lo anterior, y con la lógica del juego, identifique y escriba claramente (archivo RESPUESTAS.txt):
+
+Posibles condiciones de carrera.
+    Respuesta: Verificar una celda (comida, turbo, entre otras); acceso al GUI; acceso a la colección snakes.
+Uso inadecuado de colecciones, considerando su manejo concurrente (para esto, aumente la velocidad del juego y ejecútelo varias veces hasta que se genere un error).
+    Respuesta: Mientras uno de los hilos itera la colección, hay otro hilo modificando los valores de la colección, provocando un uso inadecuado de la misma, lo que resulta en una excepción.
+Uso innecesario de esperas activas.
+    Respuesta: Hay una espera activa en el método init(), la cual evita que se utilicen todos los hilos del procesador adecuadamente.
+               Esto se puede solucionar haciendo que el hilo principal se duerma, evitando un consumo de recursos desproporcionado.
+
+3. Identifique las regiones críticas asociadas a las condiciones de carrera, y haga algo para eliminarlas. Tenga en cuenta que se debe sincronizar estríctamente LO NECESARIO. En su documento de respuestas indique, la solución realizada para cada ítem del punto 2. Igualmente tenga en cuenta que en los siguientes puntos NO se deben agregar más posibles condiciones de carrera.
+    Respuesta: En este ejercicio, nuestra solución fue sincronizar los hilos cuando tengan las condiciones carrera, para evitar excepciones de escritura a la hora de acceder a una lista, por ejemplo.
+Como primer paso para resolver las regiones criticas creamos objetos de sincronización con cada una de las condiciones que encontramos.
+Realizamos sincronizaciones para la lectura y escritura de objetos que pueden llegar a ser modificados de manera simultánea. En este caso, decidimos hacerlo con el cuerpo de la serpiente ya que este es consultado desde la clase SnakeApp mientras que puede ser modificado por la clase Snake; el estado de snakeEnd que puede ser consultado desde la clase que se encargó de crear los hilos para conocer su estado y desde cada una de las serpientes mientras actualiza su estado actual; el acceso al GUI para evitar que los intentos de actualizarlo por cada una de las serpientes que pueden generar colisiones y las pausas para que se realizaran de forma correcta.
+
+
